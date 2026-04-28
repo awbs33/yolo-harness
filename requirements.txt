@@ -1,6 +1,6 @@
-ultralytics>=8.0.0
-opencv-python>=4.8.0
-matplotlib>=3.7.0
-numpy>=1.24.0
+ultralytics==8.4.26
+opencv-python==4.13.0.92
+matplotlib==3.10.8
+numpy==2.4.3
 pytest>=7.4.0
 pytest-mock>=3.11.0
