@@ -46,12 +46,42 @@ yolo-harness/
 
 **1단계 — 사전 준비 (최초 1회)**
 
+Git 설치 확인:
 ```bash
-# Git 설치 확인
 git --version
+```
 
-# Python 설치 확인 (3.9 이상)
+Git이 없다면 OS에 맞게 설치:
+
+- **Windows**
+  1. https://git-scm.com/download/win 접속
+  2. 설치 파일 다운로드 후 실행 (기본 옵션으로 Next → Next → Install)
+  3. 설치 완료 후 `Git Bash` 실행해서 사용
+
+- **Mac**
+  ```bash
+  # Homebrew가 있는 경우
+  brew install git
+
+  # Homebrew가 없는 경우 — Xcode Command Line Tools 설치
+  xcode-select --install
+  ```
+
+- **Linux (Ubuntu/Debian)**
+  ```bash
+  sudo apt update && sudo apt install git -y
+  ```
+
+설치 후 사용자 정보 등록 (최초 1회):
+```bash
+git config --global user.name "본인이름"
+git config --global user.email "본인이메일@회사.com"
+```
+
+Python 설치 확인 (3.9 이상):
+```bash
 python --version
+# 없으면: https://www.python.org/downloads 에서 설치
 ```
 
 **SSH 키 생성 및 GitHub 등록**
@@ -205,3 +235,4 @@ git rebase origin/dev   # merge 대신 rebase 권장 (히스토리 선형 유지
 | 2026-04-26 | 초기 구성 | 전체 | YOLOv8 파이프라인 하네스 신규 구축 |
 | 2026-04-28 | Git 협업 가이드 추가, .gitignore 생성 | CLAUDE.md, .gitignore | 팀 공동 작업 체계 구축 |
 | 2026-05-08 | 신규 팀원 세팅 절차 및 clone/pull 차이 설명 추가 | CLAUDE.md | 공동 개발 온보딩 가이드 보완 |
+| 2026-05-08 | OS별 Git 설치 방법 추가 | CLAUDE.md | Git 미설치 팀원 대응 |
