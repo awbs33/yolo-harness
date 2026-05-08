@@ -166,6 +166,81 @@ git checkout -b feature/내작업이름
 | 7 | `pytest tests/ -v` 전체 통과 | ☐ |
 | 8 | `python main.py` 실행 확인 | ☐ |
 
+### 파일 수정 후 Git 업데이트 절차
+
+**1단계 — 작업 전 최신 코드 받기**
+
+```bash
+git pull origin main
+```
+
+> 다른 팀원이 올린 변경사항을 먼저 내려받아야 충돌을 예방할 수 있습니다.
+
+**2단계 — 작업용 브랜치 생성**
+
+```bash
+git checkout -b feature/inference-add-batch
+```
+
+> `main`에 직접 작업하지 않고 별도 브랜치에서 작업하는 것이 원칙입니다.
+
+**3단계 — 파일 수정**
+
+`src/inference.py` 에서 함수 추가 또는 코드 수정
+
+**4단계 — 변경 내용 확인**
+
+```bash
+# 어떤 파일이 바뀌었는지 확인
+git status
+
+# 실제 변경된 내용을 줄 단위로 확인
+git diff src/inference.py
+```
+
+**5단계 — 스테이징 (커밋할 파일 선택)**
+
+```bash
+# 수정한 파일만 선택
+git add src/inference.py
+
+# 관련 테스트도 수정했다면 함께 추가
+git add src/inference.py tests/test_inference.py
+```
+
+**6단계 — 테스트 실행 (커밋 전 필수)**
+
+```bash
+pytest tests/ -v
+```
+
+> 전체 통과 확인 후 커밋합니다. 실패 상태로 커밋하지 않습니다.
+
+**7단계 — 커밋**
+
+```bash
+git commit -m "feat(inference): 배치 처리 함수 추가"
+```
+
+**8단계 — GitHub에 push**
+
+```bash
+git push origin feature/inference-add-batch
+```
+
+**9단계 — Pull Request(PR) 생성**
+
+GitHub에서 `feature/inference-add-batch` → `main` 으로 PR을 생성합니다.
+팀장이 코드 리뷰 후 승인하면 `main`에 머지됩니다.
+
+**전체 흐름 요약**
+
+```
+pull → 브랜치생성 → 코드수정 → status/diff → add → pytest → commit → push → PR
+```
+
+---
+
 ### 브랜치 전략
 
 | 브랜치 | 용도 |
@@ -236,3 +311,4 @@ git rebase origin/dev   # merge 대신 rebase 권장 (히스토리 선형 유지
 | 2026-04-28 | Git 협업 가이드 추가, .gitignore 생성 | CLAUDE.md, .gitignore | 팀 공동 작업 체계 구축 |
 | 2026-05-08 | 신규 팀원 세팅 절차 및 clone/pull 차이 설명 추가 | CLAUDE.md | 공동 개발 온보딩 가이드 보완 |
 | 2026-05-08 | OS별 Git 설치 방법 추가 | CLAUDE.md | Git 미설치 팀원 대응 |
+| 2026-05-08 | 파일 수정 후 Git 업데이트 절차 추가 | CLAUDE.md | 팀원 개발 워크플로우 가이드 보완 |
