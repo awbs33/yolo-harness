@@ -29,45 +29,69 @@ yolo-harness/
 
 ---
 
-## Git 협업 가이드
+## Git 협업 전체 흐름
 
-### `git clone` vs `git pull` 차이
-
-| 명령 | 시점 | 역할 |
-|------|------|------|
-| `git clone` | **최초 1회** | 저장소 전체를 처음 내려받음 |
-| `git pull` | **작업 시작할 때마다** | 다른 팀원이 올린 변경사항을 내 로컬에 반영 |
-
-> clone은 "처음 입사할 때", pull은 "매일 출근해서 어제 올라온 것 확인"하는 것과 같다.
+```
+[팀장] 프로젝트 생성 → GitHub 등록 → push
+          ↓
+[팀원] clone → 환경 세팅 → 브랜치 생성 → 코드 수정 → push → PR 생성
+          ↓
+[팀장] 코드 리뷰 → 승인 → main 머지
+```
 
 ---
 
-### 신규 팀원 환경 세팅 절차
+## PHASE 1 — 팀장: 프로젝트 최초 생성 및 GitHub 등록
 
-**1단계 — 사전 준비 (최초 1회)**
+> 프로젝트를 처음 만들고 GitHub에 올리는 과정입니다. **최초 1회만** 진행합니다.
 
-Git 설치 확인:
 ```bash
+# 1. 프로젝트 폴더에서 git 초기화
+git init
+git branch -M main
+
+# 2. GitHub에서 빈 저장소 생성 후 원격 등록 (SSH 방식)
+git remote add origin git@github.com:awbs33/yolo-harness.git
+
+# 3. 공유할 파일 스테이징
+git add src/ tests/ main.py requirements.txt CLAUDE.md .gitignore
+
+# 4. 최초 커밋
+git commit -m "chore: 초기 프로젝트 구성"
+
+# 5. GitHub에 push
+git push -u origin main
+```
+
+**git에 올리면 안 되는 것**
+
+| 항목 | 이유 |
+|------|------|
+| `*.pt` (모델 파일) | 용량이 크고 팀 공유 드라이브로 별도 관리 |
+| `results/` | 파이프라인 출력물, 개인별 상이 |
+| `images/` 실제 데이터 | 용량 큰 바이너리, 별도 공유 |
+| `_workspace/` | 에이전트 로컬 작업 공간 |
+
+---
+
+## PHASE 2 — 팀원: 최초 환경 세팅 (입사 후 1회)
+
+### Git 설치
+
+```bash
+# 설치 여부 확인
 git --version
 ```
 
 Git이 없다면 OS에 맞게 설치:
 
-- **Windows**
-  1. https://git-scm.com/download/win 접속
-  2. 설치 파일 다운로드 후 실행 (기본 옵션으로 Next → Next → Install)
-  3. 설치 완료 후 `Git Bash` 실행해서 사용
-
-- **Mac**
+- **Windows:** https://git-scm.com/download/win → 설치 파일 실행 (기본 옵션) → `Git Bash` 사용
+- **Mac:**
   ```bash
-  # Homebrew가 있는 경우
-  brew install git
-
-  # Homebrew가 없는 경우 — Xcode Command Line Tools 설치
-  xcode-select --install
+  brew install git          # Homebrew가 있는 경우
+  xcode-select --install    # Homebrew가 없는 경우
   ```
-
-- **Linux (Ubuntu/Debian)**
+- **Linux (Ubuntu/Debian):**
   ```bash
   sudo apt update && sudo apt install git -y
   ```
@@ -78,13 +102,7 @@ git config --global user.name "본인이름"
 git config --global user.email "본인이메일@회사.com"
 ```
 
-Python 설치 확인 (3.9 이상):
-```bash
-python --version
-# 없으면: https://www.python.org/downloads 에서 설치
-```
-
-**SSH 키 생성 및 GitHub 등록**
+### SSH 키 생성 및 GitHub 등록
 
 ```bash
 # SSH 키 생성
@@ -97,67 +115,39 @@ cat ~/.ssh/id_ed25519.pub
 # 연결 테스트
 ssh -T git@github.com
 # Hi <본인의 GitHub 사용자명>! You've successfully authenticated...
-# 위 메시지가 나오면 성공
 ```
 
-**2단계 — 저장소 클론 (최초 1회)**
+### 저장소 클론 및 환경 구성
 
 ```bash
+# 저장소 클론 (최초 1회)
 git clone git@github.com:awbs33/yolo-harness.git
 cd yolo-harness
-```
 
-**3단계 — 가상환경 생성 및 의존성 설치**
-
-```bash
+# 가상환경 생성 및 활성화
 python -m venv .venv
-source .venv/bin/activate        # Mac/Linux
-.venv\Scripts\activate           # Windows
+source .venv/bin/activate      # Mac/Linux
+.venv\Scripts\activate         # Windows
 
+# 의존성 설치
 pip install -r requirements.txt
-```
 
-**4단계 — 모델 파일 준비 (git에 없으므로 별도 수령)**
+# 모델 파일 수령 (팀장에게 별도 전달받아 프로젝트 루트에 복사)
+cp /shared/models/yolov8n.pt .
 
-```bash
-# 팀장에게 yolov8n.pt 파일을 받아 프로젝트 루트에 복사
-cp /shared/models/yolov8n.pt ~/yolo-harness/
-```
+# 테스트 이미지 준비
+cp /shared/data/images/* ./images/
 
-**5단계 — 테스트 이미지 준비**
-
-```bash
-cp /shared/data/images/* ~/yolo-harness/images/
-```
-
-**6단계 — 테스트 실행으로 환경 검증**
-
-```bash
-pytest tests/ -v
-# 전체 통과 시 환경 세팅 완료 (테스트는 mock 기반으로 모델 파일 불필요)
-```
-
-**7단계 — 파이프라인 실행 확인**
-
-```bash
+# 환경 검증
+pytest tests/ -v               # 전체 통과 확인
 python main.py --input ./images --output ./results
-```
-
-**8단계 — 개발 시작 전 브랜치 생성**
-
-```bash
-# 작업 시작 전 항상 최신 코드 반영
-git pull origin main
-
-# 작업용 브랜치 생성
-git checkout -b feature/내작업이름
 ```
 
 **세팅 체크리스트**
 
 | 순서 | 항목 | 확인 |
 |------|------|------|
-| 1 | Git / Python 설치 | ☐ |
+| 1 | Git / Python 설치 및 사용자 정보 등록 | ☐ |
 | 2 | SSH 키 생성 및 GitHub 등록 | ☐ |
 | 3 | `git clone` | ☐ |
 | 4 | 가상환경 생성 및 `pip install` | ☐ |
@@ -166,104 +156,71 @@ git checkout -b feature/내작업이름
 | 7 | `pytest tests/ -v` 전체 통과 | ☐ |
 | 8 | `python main.py` 실행 확인 | ☐ |
 
-### 파일 수정 후 Git 업데이트 절차
+---
 
-**1단계 — 작업 전 최신 코드 받기**
+## PHASE 3 — 팀원: 코드 수정 및 PR 생성
+
+> 매번 작업할 때마다 반복하는 흐름입니다.
 
 ```bash
+# 1. 작업 전 최신 코드 반영 (매번 필수)
+#    clone은 최초 1회, pull은 작업 시작할 때마다
 git pull origin main
-```
 
-> 다른 팀원이 올린 변경사항을 먼저 내려받아야 충돌을 예방할 수 있습니다.
-
-**2단계 — 작업용 브랜치 생성**
-
-```bash
+# 2. 작업용 브랜치 생성 (main에 직접 작업 금지)
 git checkout -b feature/inference-add-batch
-```
 
-> `main`에 직접 작업하지 않고 별도 브랜치에서 작업하는 것이 원칙입니다.
+# 3. 코드 수정
+#    src/inference.py 등 필요한 파일 수정
 
-**3단계 — 파일 수정**
+# 4. 변경 내용 확인
+git status                        # 어떤 파일이 바뀌었는지
+git diff src/inference.py         # 줄 단위 변경 내용
 
-`src/inference.py` 에서 함수 추가 또는 코드 수정
-
-**4단계 — 변경 내용 확인**
-
-```bash
-# 어떤 파일이 바뀌었는지 확인
-git status
-
-# 실제 변경된 내용을 줄 단위로 확인
-git diff src/inference.py
-```
-
-**5단계 — 스테이징 (커밋할 파일 선택)**
-
-```bash
-# 수정한 파일만 선택
-git add src/inference.py
-
-# 관련 테스트도 수정했다면 함께 추가
-git add src/inference.py tests/test_inference.py
-```
-
-**6단계 — 테스트 실행 (커밋 전 필수)**
-
-```bash
+# 5. 테스트 실행 (커밋 전 필수 — 실패 상태로 커밋 금지)
 pytest tests/ -v
-```
 
-> 전체 통과 확인 후 커밋합니다. 실패 상태로 커밋하지 않습니다.
+# 6. 스테이징
+git add src/inference.py
+git add src/inference.py tests/test_inference.py   # 테스트도 수정했다면 함께
 
-**7단계 — 커밋**
-
-```bash
+# 7. 커밋
 git commit -m "feat(inference): 배치 처리 함수 추가"
-```
 
-**8단계 — GitHub에 push**
-
-```bash
+# 8. GitHub에 push
 git push origin feature/inference-add-batch
 ```
 
-**9단계 — Pull Request(PR) 생성**
+push 후 GitHub에서 `feature/inference-add-batch` → `main` 으로 **Pull Request(PR)** 를 생성합니다.
 
-GitHub에서 `feature/inference-add-batch` → `main` 으로 PR을 생성합니다.
-팀장이 코드 리뷰 후 승인하면 `main`에 머지됩니다.
+---
 
-**전체 흐름 요약**
+## PHASE 4 — 팀장: 코드 리뷰 및 머지
 
-```
-pull → 브랜치생성 → 코드수정 → status/diff → add → pytest → commit → push → PR
+### GitHub 웹에서 리뷰 (일반적인 경우)
+
+1. GitHub → `Pull requests` 탭에서 팀원이 올린 PR 선택
+2. `Files changed` 탭에서 변경된 코드 줄 단위로 확인
+3. 특정 줄에 코멘트 작성 가능 (`+` 버튼 클릭)
+4. `Review changes` → 문제 없으면 `Approve` → `Submit review`
+5. `Merge pull request` → `Confirm merge`
+
+### 로컬에서 직접 실행 후 리뷰 (동작 확인이 필요한 경우)
+
+```bash
+# 팀원 브랜치를 로컬로 가져와서 테스트
+git fetch origin
+git checkout feature/inference-add-batch
+
+pytest tests/ -v
+python main.py --input ./images --output ./results
+
+# 확인 후 GitHub으로 돌아가 Approve → Merge
 ```
 
 ---
 
-### 브랜치 전략
-
-| 브랜치 | 용도 |
-|--------|------|
-| `main` | 항상 실행 가능한 안정 버전 |
-| `dev` | 통합 개발 브랜치 |
-| `feature/<이름>` | 개별 기능 개발 |
-| `fix/<이름>` | 버그 수정 |
-
-```bash
-# 새 기능 개발 시
-git checkout dev
-git pull origin dev
-git checkout -b feature/inference-batch-size
-
-# 작업 완료 후
-git add src/inference.py tests/test_inference.py
-git commit -m "feat(inference): 배치 크기 파라미터 추가"
-git push origin feature/inference-batch-size
-# → GitHub/GitLab에서 dev 브랜치로 PR 생성
-```
-
-### 커밋 메시지 규칙
+## 커밋 메시지 규칙
 
 ```
 <type>(<scope>): <한 줄 설명>
@@ -280,26 +237,26 @@ git push origin feature/inference-batch-size
 
 scope 예시: `preprocess`, `inference`, `visualize`, `pipeline`, `ci`
 
-### PR 머지 기준
+---
 
-- `pytest` 전체 통과 필수: `pytest tests/ -v`
-- 최소 1명 리뷰 승인
-- `main` 직접 푸시 금지
+## 브랜치 전략
 
-### 충돌 해결 원칙
-
-```bash
-git fetch origin
-git rebase origin/dev   # merge 대신 rebase 권장 (히스토리 선형 유지)
-```
+| 브랜치 | 용도 |
+|--------|------|
+| `main` | 항상 실행 가능한 안정 버전 — 직접 push 금지 |
+| `feature/<이름>` | 새 기능 개발 |
+| `fix/<이름>` | 버그 수정 |
 
 ---
 
 ## 로컬 개발 규칙
 
-- **git에 추가하면 안 되는 것:** `*.pt`, `results/`, `images/` 내 실제 데이터, `_workspace/`
-- **공유 대상:** `src/`, `tests/`, `main.py`, `requirements.txt`, `CLAUDE.md`, `.gitignore`
 - 테스트는 mock을 활용해 모델 파일 없이도 실행 가능해야 한다 (`tests/conftest.py` 참고)
+- 충돌 발생 시 `merge` 대신 `rebase` 권장 (히스토리 선형 유지)
+  ```bash
+  git fetch origin
+  git rebase origin/main
+  ```
 
 ---
 
@@ -309,6 +266,4 @@ git rebase origin/dev   # merge 대신 rebase 권장 (히스토리 선형 유지
 |------|----------|------|------|
 | 2026-04-26 | 초기 구성 | 전체 | YOLOv8 파이프라인 하네스 신규 구축 |
 | 2026-04-28 | Git 협업 가이드 추가, .gitignore 생성 | CLAUDE.md, .gitignore | 팀 공동 작업 체계 구축 |
-| 2026-05-08 | 신규 팀원 세팅 절차 및 clone/pull 차이 설명 추가 | CLAUDE.md | 공동 개발 온보딩 가이드 보완 |
-| 2026-05-08 | OS별 Git 설치 방법 추가 | CLAUDE.md | Git 미설치 팀원 대응 |
-| 2026-05-08 | 파일 수정 후 Git 업데이트 절차 추가 | CLAUDE.md | 팀원 개발 워크플로우 가이드 보완 |
+| 2026-05-08 | Git 협업 가이드 전면 재작성 | CLAUDE.md | 팀장→팀원→리뷰→머지 전체 흐름으로 통합, 중복 제거 |
