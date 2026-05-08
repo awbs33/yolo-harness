@@ -31,17 +31,110 @@ yolo-harness/
 
 ## Git 협업 가이드
 
-### 초기 설정 (신규 팀원)
+### `git clone` vs `git pull` 차이
+
+| 명령 | 시점 | 역할 |
+|------|------|------|
+| `git clone` | **최초 1회** | 저장소 전체를 처음 내려받음 |
+| `git pull` | **작업 시작할 때마다** | 다른 팀원이 올린 변경사항을 내 로컬에 반영 |
+
+> clone은 "처음 입사할 때", pull은 "매일 출근해서 어제 올라온 것 확인"하는 것과 같다.
+
+---
+
+### 신규 팀원 환경 세팅 절차
+
+**1단계 — 사전 준비 (최초 1회)**
 
 ```bash
-git clone <repository-url> yolo-harness
-cd yolo-harness
-pip install -r requirements.txt
-# 모델 파일을 별도 공유 경로에서 다운로드
-cp /shared/models/yolov8n.pt .
-# 테스트 이미지 준비
-cp /shared/data/images/* ./images/
+# Git 설치 확인
+git --version
+
+# Python 설치 확인 (3.9 이상)
+python --version
 ```
+
+**SSH 키 생성 및 GitHub 등록**
+
+```bash
+# SSH 키 생성
+ssh-keygen -t ed25519 -C "본인이메일@회사.com"
+
+# 공개키 확인 후 복사
+cat ~/.ssh/id_ed25519.pub
+# → GitHub > Settings > SSH and GPG keys > New SSH key 에 붙여넣기
+
+# 연결 테스트
+ssh -T git@github.com
+# Hi <본인의 GitHub 사용자명>! You've successfully authenticated...
+# 위 메시지가 나오면 성공
+```
+
+**2단계 — 저장소 클론 (최초 1회)**
+
+```bash
+git clone git@github.com:awbs33/yolo-harness.git
+cd yolo-harness
+```
+
+**3단계 — 가상환경 생성 및 의존성 설치**
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Mac/Linux
+.venv\Scripts\activate           # Windows
+
+pip install -r requirements.txt
+```
+
+**4단계 — 모델 파일 준비 (git에 없으므로 별도 수령)**
+
+```bash
+# 팀장에게 yolov8n.pt 파일을 받아 프로젝트 루트에 복사
+cp /shared/models/yolov8n.pt ~/yolo-harness/
+```
+
+**5단계 — 테스트 이미지 준비**
+
+```bash
+cp /shared/data/images/* ~/yolo-harness/images/
+```
+
+**6단계 — 테스트 실행으로 환경 검증**
+
+```bash
+pytest tests/ -v
+# 전체 통과 시 환경 세팅 완료 (테스트는 mock 기반으로 모델 파일 불필요)
+```
+
+**7단계 — 파이프라인 실행 확인**
+
+```bash
+python main.py --input ./images --output ./results
+```
+
+**8단계 — 개발 시작 전 브랜치 생성**
+
+```bash
+# 작업 시작 전 항상 최신 코드 반영
+git pull origin main
+
+# 작업용 브랜치 생성
+git checkout -b feature/내작업이름
+```
+
+**세팅 체크리스트**
+
+| 순서 | 항목 | 확인 |
+|------|------|------|
+| 1 | Git / Python 설치 | ☐ |
+| 2 | SSH 키 생성 및 GitHub 등록 | ☐ |
+| 3 | `git clone` | ☐ |
+| 4 | 가상환경 생성 및 `pip install` | ☐ |
+| 5 | `yolov8n.pt` 파일 수령 및 배치 | ☐ |
+| 6 | 테스트 이미지 준비 | ☐ |
+| 7 | `pytest tests/ -v` 전체 통과 | ☐ |
+| 8 | `python main.py` 실행 확인 | ☐ |
 
 ### 브랜치 전략
 
@@ -111,3 +204,4 @@ git rebase origin/dev   # merge 대신 rebase 권장 (히스토리 선형 유지
 |------|----------|------|------|
 | 2026-04-26 | 초기 구성 | 전체 | YOLOv8 파이프라인 하네스 신규 구축 |
 | 2026-04-28 | Git 협업 가이드 추가, .gitignore 생성 | CLAUDE.md, .gitignore | 팀 공동 작업 체계 구축 |
+| 2026-05-08 | 신규 팀원 세팅 절차 및 clone/pull 차이 설명 추가 | CLAUDE.md | 공동 개발 온보딩 가이드 보완 |
